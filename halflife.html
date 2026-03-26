@@ -83,7 +83,7 @@
         <label for="exSel">Load Example</label>
         <select id="exSel">
           <option value="">— Custom —</option>
-          <option value="hrt" selected>HRT & Breast Cancer (reversal)</option>
+          <option value="hrt" selected>HRT & Breast Cancer (stylized reversal)</option>
           <option value="statins">Statins & Mortality (stable)</option>
           <option value="vitamin_d">Vitamin D & Fractures (decaying)</option>
         </select>
@@ -125,10 +125,10 @@
       </div>
 
       <!-- Cumulative effect trajectory -->
-      <div id="trajChart" style="width:100%;height:340px"></div>
+      <div id="trajChart" style="width:100%;height:340px" role="img" aria-label="Cumulative meta-analysis trajectory chart"></div>
 
       <!-- Half-life projection -->
-      <div id="projChart" style="width:100%;height:280px;margin-top:14px"></div>
+      <div id="projChart" style="width:100%;height:280px;margin-top:14px" role="img" aria-label="Projected z-score over time chart"></div>
 
       <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
         <button type="button" class="btn btn-sm" onclick="exportBundle()">Export JSON</button>
@@ -158,10 +158,12 @@
     <p style="text-align:center;font-family:monospace;font-size:.85rem">|z_current + drift_rate * T / SE_projected(T)| = z_alpha</p>
     <h3>Limitations</h3>
     <ul style="font-size:.85rem;padding-left:20px">
+      <li>The cumulative trajectory uses <strong>fixed-effect pooling</strong> — when between-study heterogeneity (tau²) is substantial, the FE z-score is inflated and the half-life may be over-optimistic. The tau² trend metric tracks heterogeneity growth but is not incorporated into the z-score projection.</li>
+      <li>The drift regression operates on <strong>correlated cumulative estimates</strong> (each step shares all prior studies). The drift rate is a descriptive approximation, not a formal temporal trend test.</li>
       <li>Assumes linear drift extrapolation — real evidence evolution is nonlinear</li>
       <li>Does not model paradigm shifts (e.g., new drug class replacing old one)</li>
-      <li>Heterogeneity trend uses simple linear regression on tau² estimates, which are noisy</li>
-      <li>Based on Shojania et al. (JAMA 2007) framework but extends with quantitative modeling</li>
+      <li>SE projection assumes future studies have similar average precision to existing ones</li>
+      <li>For non-significant meta-analyses, the "half-life" represents time until significance is achieved, which is conceptually distinct from shelf-life of an existing conclusion</li>
     </ul>
     <h3>References</h3>
     <ul style="font-size:.85rem;padding-left:20px">
@@ -190,7 +192,7 @@ function normalCDF(x) {
 ═══════════════════════════════════════════════════════════════ */
 const EXAMPLES = {
   hrt: {
-    label: 'HRT & Breast Cancer (evidence reversal)',
+    label: 'HRT & Breast Cancer (stylized evidence reversal)',
     trialsPerYear: 1.5,
     studies: [
       {year:1980,yi:-0.15,sei:0.25}, {year:1983,yi:-0.08,sei:0.20}, {year:1987,yi:-0.22,sei:0.18},
@@ -232,10 +234,10 @@ function addStudyRow(d) {
   const tbody = document.getElementById('dataBody');
   const tr = document.createElement('tr');
   tr.innerHTML = `<td style="text-align:center;color:var(--muted)">${rowNum}</td>
-    <td><input type="number" value="${data.year ?? ''}" data-f="year" placeholder="Year" step="1"></td>
-    <td><input type="number" value="${data.yi ?? ''}" data-f="yi" placeholder="log(effect)" step="0.01"></td>
-    <td><input type="number" value="${data.sei ?? ''}" data-f="sei" placeholder="SE" step="0.01"></td>
-    <td><button type="button" onclick="this.closest('tr').remove()" style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:1.1rem">&times;</button></td>`;
+    <td><input type="number" value="${escapeHtml(String(data.year ?? ''))}" data-f="year" placeholder="Year" step="1"></td>
+    <td><input type="number" value="${escapeHtml(String(data.yi ?? ''))}" data-f="yi" placeholder="log(effect)" step="0.01"></td>
+    <td><input type="number" value="${escapeHtml(String(data.sei ?? ''))}" data-f="sei" placeholder="SE" step="0.01"></td>
+    <td><button type="button" onclick="this.closest('tr').remove()" style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:1.1rem" aria-label="Remove study row ${rowNum}">&times;</button></td>`;
   tbody.appendChild(tr);
 }
 
@@ -313,8 +315,9 @@ function estimateHalfLife(cma, trialsPerYear) {
     sumW += w; sumX += w * x; sumY += w * r.theta;
     sumXX += w * x * x; sumXY += w * x * r.theta;
   }
-  const drift = (sumW * sumXY - sumX * sumY) / (sumW * sumXX - sumX * sumX);
-  // drift = log-effect units per year (positive = moving away from 0, negative = toward 0)
+  // Guard: when all studies share the same year, denominator is 0 → drift = 0 (no temporal info)
+  const denom = sumW * sumXX - sumX * sumX;
+  const drift = Math.abs(denom) > 1e-12 ? (sumW * sumXY - sumX * sumY) / denom : 0;
 
   // 2. Fragility distance: current z-score
   const fragility = Math.abs(current.z);
@@ -405,16 +408,17 @@ function compute() {
   const isAging = hl.halfLife !== Infinity && hl.halfLife > 5 && hl.halfLife <= 20;
   gauge.className = 'gauge ' + (isStable ? 'stable' : isAging ? 'aging' : 'fragile');
 
+  const sigLabel = hl.currentSig ? '' : ' (time to significance)';
   document.getElementById('hlVerdict').textContent =
     isStable ? 'Stable — evidence unlikely to change soon'
-    : isAging ? 'Aging — conclusion may change within a generation of trials'
-    : 'Fragile — conclusion at risk of reversal in the near term';
+    : isAging ? 'Aging — conclusion may change within a generation of trials' + sigLabel
+    : 'Fragile — conclusion at risk of change in the near term' + sigLabel;
 
   // Metrics
   document.getElementById('mDrift').textContent = hl.drift !== undefined ? hl.drift.toFixed(4) : '—';
   document.getElementById('mFragility').textContent = hl.fragility !== undefined ? hl.fragility.toFixed(2) : '—';
   document.getElementById('mTau2Trend').textContent = hl.tau2Trend !== undefined ? (hl.tau2Trend >= 0 ? '+' : '') + hl.tau2Trend.toFixed(4) : '—';
-  document.getElementById('mCurrentSig').textContent = hl.currentSig ? 'Significant' : 'Not significant';
+  document.getElementById('mCurrentSig').textContent = (hl.currentSig ? 'Significant' : 'Not significant') + ' (k=' + hl.k + ')';
 
   // Charts
   renderTrajectory(cma);
