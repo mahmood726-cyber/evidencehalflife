@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- CSP: unsafe-inline for single-file; unsafe-eval for Plotly -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plot.ly; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self';" />
+  <title>Evidence Half-Life — When Will This Meta-Analysis Become Obsolete?</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root {
+      --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#64748b; --accent:#7c3aed;
+      --border:#e2e8f0; --success:#059669; --warn:#d97706; --danger:#dc2626;
+      --green-bg:#dcfce7; --amber-bg:#fef9c3; --red-bg:#fef2f2; --shadow:0 1px 6px rgba(0,0,0,.06);
+    }
+    [data-theme="dark"] {
+      --bg:#0c0a1a; --card:#1a1633; --text:#e2e8f0; --muted:#94a3b8; --accent:#a78bfa;
+      --border:#2d2b4a; --success:#34d399; --warn:#fbbf24; --danger:#f87171;
+      --green-bg:#052e16; --amber-bg:#422006; --red-bg:#450a0a; --shadow:0 1px 6px rgba(0,0,0,.3);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+    .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+    .hdr{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+    .hdr h1{font-size:1.25rem;font-weight:800;color:var(--accent)} .hdr-sub{font-size:.78rem;color:var(--muted);font-weight:400}
+    .hdr-btns{display:flex;gap:8px} .hdr-btns button{background:none;border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85rem}
+    .hdr-btns button:hover{background:var(--accent);color:#fff;border-color:var(--accent)} .hdr-btns button:focus{outline:2px solid var(--accent);outline-offset:2px}
+
+    .wrap{max-width:1280px;margin:0 auto;padding:20px}
+    .grid{display:grid;grid-template-columns:420px 1fr;gap:20px} @media(max-width:960px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;box-shadow:var(--shadow)}
+    .card-t{font-size:1rem;font-weight:700;margin-bottom:14px;color:var(--accent)}
+
+    label{display:block;font-size:.82rem;font-weight:600;margin-bottom:3px;color:var(--muted)}
+    input,select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.9rem}
+    input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+    .row{display:flex;gap:10px;margin-bottom:10px} .row>div{flex:1} .grp{margin-bottom:12px}
+    .btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;width:100%}
+    .btn:hover{opacity:.9} .btn:focus{outline:2px solid var(--accent);outline-offset:2px}
+    .btn-sm{padding:6px 14px;font-size:.82rem;width:auto}
+
+    /* Gauge */
+    .gauge{text-align:center;padding:24px;border-radius:12px;margin-bottom:16px}
+    .gauge.stable{background:var(--green-bg)} .gauge.aging{background:var(--amber-bg)} .gauge.fragile{background:var(--red-bg)}
+    .gauge-val{font-size:3rem;font-weight:900;line-height:1} .gauge-unit{font-size:1rem;font-weight:400;color:var(--muted)}
+    .gauge-lbl{font-size:.85rem;color:var(--muted);margin-top:4px}
+
+    .mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+    .mb{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+    .mb .v{font-size:1.2rem;font-weight:700} .mb .l{font-size:.72rem;color:var(--muted)}
+
+    /* Study table */
+    .stbl{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px}
+    .stbl th,.stbl td{padding:5px 8px;border:1px solid var(--border);text-align:left}
+    .stbl th{background:var(--bg);font-weight:600;font-size:.78rem;text-transform:uppercase;color:var(--muted)}
+
+    /* Modal */
+    .modal-ov{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center}
+    .modal-ov.hidden{display:none}
+    .modal{background:var(--card);border-radius:12px;max-width:650px;width:90%;max-height:80vh;overflow-y:auto;padding:24px;position:relative}
+    .modal h2{margin-bottom:12px} .modal h3{margin-top:14px;margin-bottom:6px;font-size:.95rem}
+    .modal-x{position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text)}
+    .modal-x:focus{outline:2px solid var(--accent)}
+  </style>
+</head>
+<body>
+<a href="#main" class="sr-only" style="position:absolute;left:-9999px" onfocus="this.style.cssText='position:fixed;top:0;left:0;z-index:9999;padding:8px 16px;background:var(--accent);color:#fff;font-size:1rem;text-decoration:none;border-radius:4px'" onblur="this.style.cssText='position:absolute;left:-9999px'">Skip to content</a>
+
+<header class="hdr">
+  <div><h1>Evidence Half-Life <span class="hdr-sub">When Will This Meta-Analysis Become Obsolete?</span></h1></div>
+  <div class="hdr-btns"><button id="aboutBtn">About</button><button id="themeBtn">Dark Mode</button></div>
+</header>
+
+<main id="main" class="wrap">
+<div class="grid">
+  <!-- LEFT: Input -->
+  <div>
+    <div class="card">
+      <h2 class="card-t">Cumulative Meta-Analysis Data</h2>
+      <div class="grp">
+        <label for="exSel">Load Example</label>
+        <select id="exSel">
+          <option value="">— Custom —</option>
+          <option value="hrt" selected>HRT & Breast Cancer (reversal)</option>
+          <option value="statins">Statins & Mortality (stable)</option>
+          <option value="vitamin_d">Vitamin D & Fractures (decaying)</option>
+        </select>
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Enter studies in chronological order. Each row = one study added to the cumulative MA.</p>
+      <div style="overflow-x:auto">
+        <table class="stbl" id="dataTable">
+          <thead><tr><th>#</th><th style="width:120px">Year</th><th style="width:100px">log(Effect)</th><th style="width:100px">SE</th><th></th></tr></thead>
+          <tbody id="dataBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button type="button" class="btn-sm btn" onclick="addStudyRow()">+ Add</button>
+        <button type="button" class="btn-sm btn" onclick="addStudyRow();addStudyRow();addStudyRow()">+ 3</button>
+        <button type="button" class="btn-sm btn" style="background:var(--danger)" onclick="clearData()">Clear</button>
+      </div>
+      <div class="grp" style="margin-top:14px">
+        <label for="trialsPerYear">Estimated New Trials / Year (in this field)</label>
+        <input type="number" id="trialsPerYear" min="0" step="0.5" value="2" />
+      </div>
+      <button type="button" class="btn" onclick="compute()" style="margin-top:10px">Estimate Half-Life</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div>
+    <div class="card" id="results">
+      <h2 class="card-t">Evidence Shelf Life</h2>
+      <div class="gauge stable" id="gauge" aria-live="polite" aria-atomic="true">
+        <div class="gauge-val" id="hlVal">— <span class="gauge-unit">years</span></div>
+        <div class="gauge-lbl" id="hlVerdict">Enter data to estimate</div>
+      </div>
+
+      <div class="mg">
+        <div class="mb"><div class="v" id="mDrift">—</div><div class="l">Effect Drift Rate<br>(log-units/year)</div></div>
+        <div class="mb"><div class="v" id="mFragility">—</div><div class="l">Fragility Distance<br>(z-scores from null)</div></div>
+        <div class="mb"><div class="v" id="mTau2Trend">—</div><div class="l">Tau² Trend<br>(per decade)</div></div>
+        <div class="mb"><div class="v" id="mCurrentSig">—</div><div class="l">Current Status</div></div>
+      </div>
+
+      <!-- Cumulative effect trajectory -->
+      <div id="trajChart" style="width:100%;height:340px"></div>
+
+      <!-- Half-life projection -->
+      <div id="projChart" style="width:100%;height:280px;margin-top:14px"></div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-sm" onclick="exportBundle()">Export JSON</button>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<!-- About Modal -->
+<div class="modal-ov hidden" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutT">
+  <div class="modal">
+    <button class="modal-x" id="aboutX" aria-label="Close">&times;</button>
+    <h2 id="aboutT">Evidence Half-Life v1.0.0</h2>
+    <p><strong>Estimates when a meta-analytic conclusion will become obsolete.</strong></p>
+    <h3>The Model</h3>
+    <p>Given a cumulative meta-analysis (studies ordered chronologically), the tool estimates four quantities:</p>
+    <ol style="font-size:.85rem;padding-left:20px;margin:8px 0">
+      <li><strong>Effect drift rate</strong>: slope of the cumulative pooled effect over time (weighted linear regression of cumulative theta on year)</li>
+      <li><strong>Fragility distance</strong>: how many standard errors the current pooled effect is from the null (|theta/SE|). Low values mean the conclusion is close to flipping.</li>
+      <li><strong>Heterogeneity trend</strong>: whether tau² is increasing over time (expanding disagreement = accelerating obsolescence)</li>
+      <li><strong>Evidence velocity</strong>: estimated rate of new studies per year in the field</li>
+    </ol>
+    <h3>Half-Life Computation</h3>
+    <p>The half-life is the projected number of years until the cumulative z-score crosses the significance threshold (|z| = 1.96), assuming the current drift rate continues and new studies arrive at the estimated velocity. If the drift is toward the null, the half-life is finite. If the drift is away from the null (strengthening evidence), the half-life is reported as "> 50 years" (stable).</p>
+    <p>Formally: at the current rate, each new study shifts the cumulative z by approximately drift_rate / (SE * sqrt(k+j)) per year. We solve for the time T such that:</p>
+    <p style="text-align:center;font-family:monospace;font-size:.85rem">|z_current + drift_rate * T / SE_projected(T)| = z_alpha</p>
+    <h3>Limitations</h3>
+    <ul style="font-size:.85rem;padding-left:20px">
+      <li>Assumes linear drift extrapolation — real evidence evolution is nonlinear</li>
+      <li>Does not model paradigm shifts (e.g., new drug class replacing old one)</li>
+      <li>Heterogeneity trend uses simple linear regression on tau² estimates, which are noisy</li>
+      <li>Based on Shojania et al. (JAMA 2007) framework but extends with quantitative modeling</li>
+    </ul>
+    <h3>References</h3>
+    <ul style="font-size:.85rem;padding-left:20px">
+      <li>Shojania KG et al. How quickly do systematic reviews go out of date? Ann Intern Med. 2007;147:224-233.</li>
+      <li>French SD et al. Updating systematic reviews. BMC Med Res Methodol. 2005;5:33.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function pNum(id, fb) { const v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : fb; }
+function normalCDF(x) {
+  if (x > 8) return 1; if (x < -8) return 0;
+  const a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=.3275911;
+  const s=x<0?-1:1, ax=Math.abs(x)/Math.sqrt(2), t=1/(1+p*ax);
+  return .5*(1+s*(1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-ax*ax)));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUILT-IN EXAMPLES
+═══════════════════════════════════════════════════════════════ */
+const EXAMPLES = {
+  hrt: {
+    label: 'HRT & Breast Cancer (evidence reversal)',
+    trialsPerYear: 1.5,
+    studies: [
+      {year:1980,yi:-0.15,sei:0.25}, {year:1983,yi:-0.08,sei:0.20}, {year:1987,yi:-0.22,sei:0.18},
+      {year:1991,yi:-0.18,sei:0.15}, {year:1995,yi:-0.10,sei:0.12}, {year:1997,yi:0.05,sei:0.20},
+      {year:2000,yi:0.12,sei:0.10}, {year:2002,yi:0.26,sei:0.06}, {year:2003,yi:0.18,sei:0.08},
+      {year:2006,yi:0.15,sei:0.07}
+    ]
+  },
+  statins: {
+    label: 'Statins & CV Mortality (very stable)',
+    trialsPerYear: 3,
+    studies: [
+      {year:1994,yi:-0.30,sei:0.12}, {year:1995,yi:-0.25,sei:0.10}, {year:1998,yi:-0.28,sei:0.09},
+      {year:2000,yi:-0.31,sei:0.08}, {year:2002,yi:-0.29,sei:0.07}, {year:2004,yi:-0.27,sei:0.06},
+      {year:2006,yi:-0.30,sei:0.05}, {year:2008,yi:-0.28,sei:0.05}, {year:2010,yi:-0.29,sei:0.04},
+      {year:2012,yi:-0.28,sei:0.04}, {year:2015,yi:-0.27,sei:0.03}, {year:2018,yi:-0.28,sei:0.03}
+    ]
+  },
+  vitamin_d: {
+    label: 'Vitamin D & Fracture Prevention (decaying)',
+    trialsPerYear: 2,
+    studies: [
+      {year:1992,yi:-0.35,sei:0.20}, {year:1997,yi:-0.28,sei:0.15}, {year:2003,yi:-0.22,sei:0.12},
+      {year:2005,yi:-0.18,sei:0.10}, {year:2007,yi:-0.12,sei:0.09}, {year:2010,yi:-0.08,sei:0.07},
+      {year:2012,yi:-0.05,sei:0.06}, {year:2014,yi:-0.03,sei:0.05}, {year:2018,yi:-0.02,sei:0.04},
+      {year:2022,yi:0.01,sei:0.04}
+    ]
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   DATA TABLE
+═══════════════════════════════════════════════════════════════ */
+let rowNum = 0;
+
+function addStudyRow(d) {
+  rowNum++;
+  const data = d ?? {};
+  const tbody = document.getElementById('dataBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td style="text-align:center;color:var(--muted)">${rowNum}</td>
+    <td><input type="number" value="${data.year ?? ''}" data-f="year" placeholder="Year" step="1"></td>
+    <td><input type="number" value="${data.yi ?? ''}" data-f="yi" placeholder="log(effect)" step="0.01"></td>
+    <td><input type="number" value="${data.sei ?? ''}" data-f="sei" placeholder="SE" step="0.01"></td>
+    <td><button type="button" onclick="this.closest('tr').remove()" style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:1.1rem">&times;</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function clearData() { document.getElementById('dataBody').innerHTML = ''; rowNum = 0; }
+
+function getStudies() {
+  const rows = document.getElementById('dataBody').querySelectorAll('tr');
+  const studies = [];
+  rows.forEach(tr => {
+    const g = f => { const el = tr.querySelector(`[data-f="${f}"]`); return el ? parseFloat(el.value) : NaN; };
+    const year = g('year'), yi = g('yi'), sei = g('sei');
+    if (isFinite(year) && isFinite(yi) && isFinite(sei) && sei > 0) {
+      studies.push({ year, yi, sei });
+    }
+  });
+  return studies.sort((a, b) => a.year - b.year);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CUMULATIVE META-ANALYSIS ENGINE
+═══════════════════════════════════════════════════════════════ */
+
+function cumulativeMA(studies) {
+  const results = [];
+  for (let j = 1; j <= studies.length; j++) {
+    const subset = studies.slice(0, j);
+    // Fixed-effect (inverse-variance) pooling for cumulative trajectory
+    let sumW = 0, sumWY = 0;
+    for (const s of subset) {
+      const w = 1 / (s.sei * s.sei);
+      sumW += w;
+      sumWY += w * s.yi;
+    }
+    const theta = sumWY / sumW;
+    const se = 1 / Math.sqrt(sumW);
+    const z = theta / se;
+    const p = 2 * (1 - normalCDF(Math.abs(z)));
+
+    // DL tau2
+    let Q = 0, C = 0;
+    for (const s of subset) {
+      const w = 1 / (s.sei * s.sei);
+      Q += w * (s.yi - theta) * (s.yi - theta);
+      C += w - (w * w) / sumW;
+    }
+    const tau2 = Math.max(0, (Q - (j - 1)) / C);
+
+    results.push({
+      k: j, year: studies[j - 1].year,
+      theta, se, z, p, tau2,
+      significant: Math.abs(z) > 1.96,
+      ci_lo: theta - 1.96 * se, ci_hi: theta + 1.96 * se
+    });
+  }
+  return results;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HALF-LIFE ESTIMATION
+═══════════════════════════════════════════════════════════════ */
+
+function estimateHalfLife(cma, trialsPerYear) {
+  if (cma.length < 3) return { halfLife: null, drift: 0, fragility: 0, tau2Trend: 0, message: 'Need >= 3 studies' };
+
+  const current = cma[cma.length - 1];
+  const firstYear = cma[0].year;
+  const lastYear = current.year;
+  const span = lastYear - firstYear;
+
+  // 1. Effect drift: weighted linear regression of cumulative theta on year
+  let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, sumW = 0;
+  for (const r of cma) {
+    const w = 1 / (r.se * r.se);
+    const x = r.year - firstYear;
+    sumW += w; sumX += w * x; sumY += w * r.theta;
+    sumXX += w * x * x; sumXY += w * x * r.theta;
+  }
+  const drift = (sumW * sumXY - sumX * sumY) / (sumW * sumXX - sumX * sumX);
+  // drift = log-effect units per year (positive = moving away from 0, negative = toward 0)
+
+  // 2. Fragility distance: current z-score
+  const fragility = Math.abs(current.z);
+
+  // 3. Tau2 trend (simple slope of tau2 over time)
+  let tau2Slope = 0;
+  if (cma.length >= 5) {
+    let sx = 0, sy = 0, sxx = 0, sxy = 0, n = 0;
+    for (const r of cma.slice(2)) { // skip first 2 (tau2 unstable for k<3)
+      const x = r.year - firstYear;
+      sx += x; sy += r.tau2; sxx += x * x; sxy += x * r.tau2; n++;
+    }
+    tau2Slope = n > 1 ? (n * sxy - sx * sy) / (n * sxx - sx * sx) : 0;
+  }
+
+  // 4. Project forward: when will |z| cross 1.96?
+  // Model: cumulative z evolves as z(t) = z_current + drift_effect * t / se_projected(t)
+  // Each new study (arriving at rate trialsPerYear) reduces SE by ~1/sqrt(k+j)
+  // Approximation: SE(t) = SE_current / sqrt(1 + trialsPerYear * t / k_current)
+  // So z(t) ≈ (theta_current + drift * t) / (SE_current / sqrt(1 + rate*t/k))
+
+  let halfLife = null;
+  const k = current.k;
+  const thetaNow = current.theta;
+  const seNow = current.se;
+
+  // Is drift toward or away from null?
+  const driftTowardNull = (thetaNow > 0 && drift < 0) || (thetaNow < 0 && drift > 0);
+
+  if (!driftTowardNull && Math.abs(current.z) > 1.96) {
+    halfLife = Infinity; // Evidence strengthening or stable + currently significant
+  } else {
+    // Simulate year by year
+    for (let t = 1; t <= 100; t++) {
+      const newK = k + trialsPerYear * t;
+      const projTheta = thetaNow + drift * t;
+      const projSE = seNow * Math.sqrt(k / newK); // SE shrinks with more studies
+      const projZ = Math.abs(projTheta / projSE);
+
+      if (current.significant && projZ < 1.96) {
+        halfLife = t;
+        break;
+      }
+      if (!current.significant && projZ >= 1.96) {
+        halfLife = t; // Time until evidence becomes significant
+        break;
+      }
+    }
+    if (halfLife === null) halfLife = Infinity; // Didn't cross in 100 years
+  }
+
+  return {
+    halfLife: halfLife === Infinity ? Infinity : halfLife,
+    drift,
+    fragility,
+    tau2Trend: tau2Slope * 10, // per decade
+    driftTowardNull,
+    currentSig: current.significant,
+    currentZ: current.z,
+    currentTheta: current.theta,
+    currentSE: current.se,
+    k: current.k,
+    lastYear
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPUTE + RENDER
+═══════════════════════════════════════════════════════════════ */
+
+function compute() {
+  const studies = getStudies();
+  if (studies.length < 2) {
+    document.getElementById('hlVal').innerHTML = '<span style="font-size:1rem">Need at least 2 studies</span>';
+    return;
+  }
+
+  const trialsPerYear = pNum('trialsPerYear', 2);
+  const cma = cumulativeMA(studies);
+  const hl = estimateHalfLife(cma, trialsPerYear);
+
+  // Update gauge
+  const hlText = hl.halfLife === Infinity ? '> 50' : hl.halfLife === null ? '—' : String(Math.round(hl.halfLife));
+  document.getElementById('hlVal').innerHTML = escapeHtml(hlText) + ' <span class="gauge-unit">years</span>';
+
+  const gauge = document.getElementById('gauge');
+  const isStable = hl.halfLife === Infinity || hl.halfLife > 20;
+  const isAging = hl.halfLife !== Infinity && hl.halfLife > 5 && hl.halfLife <= 20;
+  gauge.className = 'gauge ' + (isStable ? 'stable' : isAging ? 'aging' : 'fragile');
+
+  document.getElementById('hlVerdict').textContent =
+    isStable ? 'Stable — evidence unlikely to change soon'
+    : isAging ? 'Aging — conclusion may change within a generation of trials'
+    : 'Fragile — conclusion at risk of reversal in the near term';
+
+  // Metrics
+  document.getElementById('mDrift').textContent = hl.drift !== undefined ? hl.drift.toFixed(4) : '—';
+  document.getElementById('mFragility').textContent = hl.fragility !== undefined ? hl.fragility.toFixed(2) : '—';
+  document.getElementById('mTau2Trend').textContent = hl.tau2Trend !== undefined ? (hl.tau2Trend >= 0 ? '+' : '') + hl.tau2Trend.toFixed(4) : '—';
+  document.getElementById('mCurrentSig').textContent = hl.currentSig ? 'Significant' : 'Not significant';
+
+  // Charts
+  renderTrajectory(cma);
+  renderProjection(cma, hl, trialsPerYear);
+
+  window._lastHL = { ...hl, cma, trialsPerYear, studies };
+}
+
+function renderTrajectory(cma) {
+  const years = cma.map(r => r.year);
+  const thetas = cma.map(r => r.theta);
+  const ciLo = cma.map(r => r.ci_lo);
+  const ciHi = cma.map(r => r.ci_hi);
+
+  const dk = document.documentElement.getAttribute('data-theme') === 'dark';
+  const fc = dk ? '#e2e8f0' : '#0f172a', gc = dk ? '#2d2b4a' : '#e2e8f0';
+
+  Plotly.react('trajChart', [
+    { x: years, y: ciHi, fill: 'none', mode: 'lines', line: { width: 0 }, showlegend: false },
+    { x: years, y: ciLo, fill: 'tonexty', mode: 'lines', line: { width: 0 },
+      fillcolor: 'rgba(124,58,237,0.15)', name: '95% CI' },
+    { x: years, y: thetas, mode: 'lines+markers', line: { color: '#7c3aed', width: 3 },
+      marker: { size: 5 }, name: 'Cumulative effect' },
+    { x: [years[0], years[years.length-1]], y: [0, 0], mode: 'lines',
+      line: { color: fc, width: 1, dash: 'dot' }, name: 'Null', showlegend: false }
+  ], {
+    title: { text: 'Cumulative Meta-Analysis Trajectory', font: { size: 13 } },
+    xaxis: { title: 'Year', color: fc, gridcolor: gc },
+    yaxis: { title: 'Pooled Effect (log scale)', color: fc, gridcolor: gc },
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { color: fc, size: 11 }, legend: { x: 0.01, y: 0.99 },
+    margin: { t: 35, r: 20, b: 50, l: 55 }
+  }, { responsive: true, displayModeBar: false });
+}
+
+function renderProjection(cma, hl, rate) {
+  if (!hl || hl.halfLife === null) return;
+  const current = cma[cma.length - 1];
+  const years = [], zValues = [];
+  const startYear = current.year;
+
+  for (let t = 0; t <= 30; t++) {
+    years.push(startYear + t);
+    const newK = current.k + rate * t;
+    const projTheta = current.theta + hl.drift * t;
+    const projSE = current.se * Math.sqrt(current.k / Math.max(newK, 1));
+    zValues.push(Math.abs(projTheta / projSE));
+  }
+
+  const dk = document.documentElement.getAttribute('data-theme') === 'dark';
+  const fc = dk ? '#e2e8f0' : '#0f172a', gc = dk ? '#2d2b4a' : '#e2e8f0';
+
+  Plotly.react('projChart', [
+    { x: years, y: zValues, mode: 'lines', line: { color: '#f97316', width: 3 }, name: '|z| projection' },
+    { x: [years[0], years[years.length-1]], y: [1.96, 1.96], mode: 'lines',
+      line: { color: '#dc2626', width: 1.5, dash: 'dash' }, name: 'Significance threshold (z=1.96)' }
+  ], {
+    title: { text: 'Projected |z-score| Over Time', font: { size: 13 } },
+    xaxis: { title: 'Year', color: fc, gridcolor: gc },
+    yaxis: { title: '|z|', color: fc, gridcolor: gc, range: [0, Math.max(5, ...zValues) * 1.1] },
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { color: fc, size: 11 }, legend: { x: 0.5, y: -0.2, orientation: 'h', xanchor: 'center' },
+    margin: { t: 35, r: 20, b: 60, l: 55 }
+  }, { responsive: true, displayModeBar: false });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════════════════════════════ */
+function exportBundle() {
+  if (!window._lastHL) { alert('Compute first.'); return; }
+  const r = window._lastHL;
+  const bundle = {
+    '@type': 'Evidence Half-Life Bundle', version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    results: {
+      half_life_years: r.halfLife === Infinity ? 'stable (>50)' : r.halfLife,
+      drift_per_year: +r.drift.toFixed(6), fragility_z: +r.fragility.toFixed(3),
+      tau2_trend_per_decade: +r.tau2Trend.toFixed(6),
+      current_significant: r.currentSig, current_z: +r.currentZ.toFixed(3),
+      k: r.k, trials_per_year: r.trialsPerYear
+    },
+    studies: r.studies.map(s => ({ year: s.year, yi: +s.yi.toFixed(4), sei: +s.sei.toFixed(4) })),
+    provenance: { tool: 'Evidence Half-Life v1.0.0', method: 'Linear drift extrapolation with cumulative FE pooling' }
+  };
+  const json = JSON.stringify(bundle, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = 'halflife_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EVENT WIRING
+═══════════════════════════════════════════════════════════════ */
+document.getElementById('exSel').addEventListener('change', function() {
+  const ex = EXAMPLES[this.value]; if (!ex) return;
+  clearData();
+  document.getElementById('trialsPerYear').value = ex.trialsPerYear;
+  for (const s of ex.studies) addStudyRow(s);
+  compute();
+});
+
+document.getElementById('themeBtn').addEventListener('click', function() {
+  const d = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', d ? '' : 'dark');
+  this.textContent = d ? 'Dark Mode' : 'Light Mode';
+  if (window._lastHL) compute();
+});
+
+(function() {
+  const m = document.getElementById('aboutModal'), ob = document.getElementById('aboutBtn'), cb = document.getElementById('aboutX');
+  let _kb = null;
+  function open() {
+    m.classList.remove('hidden'); cb.focus();
+    _kb = function(e) {
+      if (e.key === 'Escape') { close(); e.preventDefault(); }
+      if (e.key === 'Tab') {
+        const f = m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+        if (e.shiftKey) { if (document.activeElement === f[0]) { f[f.length-1].focus(); e.preventDefault(); } }
+        else { if (document.activeElement === f[f.length-1]) { f[0].focus(); e.preventDefault(); } }
+      }
+    };
+    document.addEventListener('keydown', _kb);
+  }
+  function close() { m.classList.add('hidden'); if (_kb) { document.removeEventListener('keydown', _kb); _kb = null; } ob.focus(); }
+  ob.addEventListener('click', open); cb.addEventListener('click', close);
+  m.addEventListener('click', function(e) { if (e.target === m) close(); });
+})();
+
+// Load default example
+document.getElementById('exSel').dispatchEvent(new Event('change'));
+</script>
+</body>
+</html>
