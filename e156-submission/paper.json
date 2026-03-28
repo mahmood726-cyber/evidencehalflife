@@ -1,0 +1,96 @@
+{
+  "title": "The Evidence Half-Life: 52% of Meta-Analyses Never Reach Analytical Stability",
+  "slug": "evidence-half-life",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "body": "When does a cumulative meta-analysis conclusion become stable across reasonable analytical specifications, and what proportion of reviews never stabilize? We applied eight multiverse specifications combining four variance estimators with two CI methods to 307 eligible Cochrane reviews from the Pairwise70 dataset. Studies were ordered by publication year and robustness scores computed cumulatively from k equals three onward, with stabilization defined as sustained robustness above seventy percent. Only 147 of 307 reviews achieved sustained stabilization, yielding a 95% CI for the never-stabilized prevalence of 46.4-57.7%, with a median half-life of six studies. Mean conclusion volatility was 8.2 robustness percentage points per added study, and 63 reviews were early stabilizers reaching robust conclusions by k equals five. More than half of Cochrane meta-analyses never produce conclusions that are analytically robust regardless of the number of accumulated primary studies. Nonetheless, this analysis is limited to eight specifications and cannot capture sensitivity to outcome definitions, risk-of-bias exclusions, or subgroup choices.",
+  "word_count": 156,
+  "sentence_count": 7,
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "When does a cumulative meta-analysis conclusion become stable across reasonable analytical specifications, and what proportion of reviews never stabilize?"
+    },
+    {
+      "role": "Dataset",
+      "text": "We applied eight multiverse specifications combining four variance estimators with two CI methods to 307 eligible Cochrane reviews from the Pairwise70 dataset."
+    },
+    {
+      "role": "Method",
+      "text": "Studies were ordered by publication year and robustness scores computed cumulatively from k equals three onward, with stabilization defined as sustained robustness above seventy percent."
+    },
+    {
+      "role": "Primary result",
+      "text": "Only 147 of 307 reviews achieved sustained stabilization, yielding a 95% CI for the never-stabilized prevalence of 46.4-57.7%, with a median half-life of six studies."
+    },
+    {
+      "role": "Robustness",
+      "text": "Mean conclusion volatility was 8.2 robustness percentage points per added study, and 63 reviews were early stabilizers reaching robust conclusions by k equals five."
+    },
+    {
+      "role": "Interpretation",
+      "text": "More than half of Cochrane meta-analyses never produce conclusions that are analytically robust regardless of the number of accumulated primary studies."
+    },
+    {
+      "role": "Boundary",
+      "text": "Nonetheless, this analysis is limited to eight specifications and cannot capture sensitivity to outcome definitions, risk-of-bias exclusions, or subgroup choices."
+    }
+  ],
+  "notes": {
+    "app": "EvidenceHalfLife v1.0",
+    "data": "Pairwise70 dataset (307 Cochrane reviews, k>=5)",
+    "code": "https://github.com/mahmood726-cyber/evidence-half-life",
+    "doi": "",
+    "version": "1.0",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "type": "methods",
+  "primary_estimand": "Never-stabilized rate",
+  "validation": {
+    "status": "pass",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": true,
+        "detail": "Sentence 4 should include a confidence interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": true,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "schema": "e156-v0.2"
+}
