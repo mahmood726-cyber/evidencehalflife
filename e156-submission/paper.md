@@ -1,6 +1,6 @@
 Mahmood Ahmad
 Tahir Heart Institute
-author@example.com
+mahmood.ahmad2@nhs.net
 
 The Evidence Half-Life: 52% of Meta-Analyses Never Reach Analytical Stability
 
