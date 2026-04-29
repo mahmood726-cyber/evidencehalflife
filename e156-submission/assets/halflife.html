@@ -234,9 +234,9 @@ function addStudyRow(d) {
   const tbody = document.getElementById('dataBody');
   const tr = document.createElement('tr');
   tr.innerHTML = `<td style="text-align:center;color:var(--muted)">${rowNum}</td>
-    <td><input type="number" value="${escapeHtml(String(data.year ?? ''))}" data-f="year" placeholder="Year" step="1"></td>
-    <td><input type="number" value="${escapeHtml(String(data.yi ?? ''))}" data-f="yi" placeholder="log(effect)" step="0.01"></td>
-    <td><input type="number" value="${escapeHtml(String(data.sei ?? ''))}" data-f="sei" placeholder="SE" step="0.01"></td>
+    <td><input type="number" value="${escapeHtml(String(data.year ?? ''))}" data-f="year" aria-label="Study year" placeholder="Year" step="1"></td>
+    <td><input type="number" value="${escapeHtml(String(data.yi ?? ''))}" data-f="yi" aria-label="Log effect estimate" placeholder="log(effect)" step="0.01"></td>
+    <td><input type="number" value="${escapeHtml(String(data.sei ?? ''))}" data-f="sei" aria-label="Standard error" placeholder="SE" step="0.01"></td>
     <td><button type="button" onclick="this.closest('tr').remove()" style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:1.1rem" aria-label="Remove study row ${rowNum}">&times;</button></td>`;
   tbody.appendChild(tr);
 }
